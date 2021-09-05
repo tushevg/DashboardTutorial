@@ -34,7 +34,7 @@ app.layout = html.Div(
                         html.Div(className='div-for-dropdown',
                             children=[
                                 dcc.Dropdown(id='stockselector',
-                                             options=get_options(df[stock].unique()),
+                                             options=get_options(df['stock'].unique()),
                                              multi=True,
                                              value=[df['stock'].sort_values()[0]],
                                              style={'backgroundColor': '#1E1E1E'},
@@ -47,15 +47,17 @@ app.layout = html.Div(
                     children=[
                         dcc.Graph(id='timeseries',
                             config={'displayModeBar': False},
-                            animate=True,
-                            figure=px.line(df,
-                                x='Date',
-                                y='value',
-                                color='stock',
-                                template='plotly_dark').update_layout(
-                                    {'plot_bgcolor': 'rgba(0,0,0,0)',
-                                     'paper_bgcolor': 'rgba(0,0,0,0)'})
-                        )
+                            animate=True#,
+                            #figure=px.line(df,
+                               # x='Date',
+                               # y='value',
+                               # color='stock',
+                               # template='plotly_dark').update_layout(
+                                #    {'plot_bgcolor': 'rgba(0,0,0,0)',
+                                    # 'paper_bgcolor': 'rgba(0,0,0,0)'})
+                        ),
+                        dcc.Graph(id='change',
+                            config={'displayModeBar': False}, animate=True)
                     ]
                 ),
             ]
@@ -63,6 +65,81 @@ app.layout = html.Div(
 
     ]
 )
+#Update Time Series
+@app.callback(Output('timeseries', 'figure'),
+              [Input('stockselector', 'value')])
+def update_timeseries(selected_dropdown_value):
+    #STEP 1
+    trace = []
+    df_sub = df
+    #STEP2
+    #Draw and append traces for each stock
+    for stock in selected_dropdown_value:
+        trace.append(go.Scatter(x=df_sub[df_sub['stock'] == stock].index,
+                                y=df_sub[df_sub['stock'] == stock]['value'],
+                                mode='lines',
+                                opacity=0.7,
+                                name=stock,
+                                textposition='bottom center'))
+    #STEP 3
+    traces = [trace]
+    data = [val for sublist in traces for val in sublist]
+    #STEP 4
+    #Define Figure
+    figure = {'data': data,
+              'layout': go.Layout(
+                  colorway=['#5E0DAC', '#FF4F00', '#375CB1', '#FF7400', '#FFF400', '#FF0056'],
+                  template='plotly_dark',
+                  paper_bgcolor='rgba(0, 0, 0, 0)',
+                  plot_bgcolor='rgba(0, 0, 0, 0)',
+                  margin={'b': 15},
+                  hovermode='x',
+                  autosize=True,
+                  title={'text': 'Stock Prices', 'font':{'color': 'white'}, 'x': 0.5},
+                  xaxis={'range': [df_sub.index.min(), df_sub.index.max()]},
+                ),
+            }
+        
+    return figure
+
+#Update Change
+@app.callback(Output('change', 'figure'),
+              [Input('stockselector', 'value')])
+def update_change(selected_dropdown_value):
+    #STEP 1
+    trace = []
+    df_sub = df
+    #STEP2
+    #Draw and append traces for each stock
+    for stock in selected_dropdown_value:
+        trace.append(go.Scatter(x=df_sub[df_sub['stock'] == stock].index,
+                                y=df_sub[df_sub['stock'] == stock]['value'],
+                                mode='lines',
+                                opacity=0.7,
+                                name=stock,
+                                textposition='bottom center'))
+    #STEP 3
+    traces = [trace]
+    data = [val for sublist in traces for val in sublist]
+    #STEP 4
+    #Define Figure
+    figure = {'data': data,
+              'layout': go.Layout(
+                  colorway=['#5E0DAC', '#FF4F00', '#375CB1', '#FF7400', '#FFF400', '#FF0056'],
+                  template='plotly_dark',
+                  paper_bgcolor='rgba(0, 0, 0, 0)',
+                  plot_bgcolor='rgba(0, 0, 0, 0)',
+                  margin={'t': 50},
+                  height=250,
+                  hovermode='x',
+                  autosize=True,
+                  title={'text': 'Daily Change', 'font':{'color': 'white'}, 'x': 0.5},
+                  xaxis={'showticklabels': False, 'range': [df_sub.index.min(), df_sub.index.max()]},
+                ),
+            }
+        
+    return figure
+
 #Run the app ($ python app.py)
 if __name__ == '__main__':
     app.run_server(debug=True)
